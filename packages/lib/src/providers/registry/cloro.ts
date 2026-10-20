@@ -1,6 +1,7 @@
 import { getCredential } from "../../secrets";
 import { type Citation, cloroAnswer, extractCitationsFromCloro } from "../../text-extraction";
 import { configuredWhen, reportedWebQueries } from "../config";
+import { getScrapeLocale } from "../locale";
 import type { ModelConfig, Provider, ScrapeResult } from "../types";
 import { failureDetails, isTransientStatus, pollDelay, queriesFromKeys, responseError, sleep } from "./scrape-shared";
 
@@ -61,9 +62,6 @@ const CLORO_GENERATION_TIMEOUT_MS = 10 * 60 * 1000;
  * tasks at once, and this has to cover the last of them reaching the front.
  */
 const CLORO_TOTAL_TIMEOUT_MS = 60 * 60 * 1000;
-
-// Cloro localizes every answer; default to a US audience.
-const CLORO_COUNTRY = "US";
 
 /** Statuses meaning "accepted, not started" — see CLORO_GENERATION_TIMEOUT_MS. */
 const CLORO_QUEUED_STATUSES = new Set(["QUEUED", "PENDING", "CREATED", "SCHEDULED"]);
@@ -190,7 +188,7 @@ export const cloro: Provider = {
 
 		const payload: Record<string, any> = {
 			[task.field]: prompt,
-			country: CLORO_COUNTRY,
+			country: getScrapeLocale().country,
 			include: task.include,
 			...task.params,
 		};

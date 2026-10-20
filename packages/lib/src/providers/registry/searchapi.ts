@@ -1,19 +1,19 @@
 import { getCredential } from "../../secrets";
 import { type Citation, extractCitationsFromSearchapi, searchapiText } from "../../text-extraction";
 import { configuredWhen, reportedWebQueries } from "../config";
+import { getScrapeLocale } from "../locale";
 import type { ModelConfig, Provider, ProviderOptions, ScrapeResult } from "../types";
 import { type Attempt, failureDetails, isTransientStatus, nonEmptyStrings, retryTransient } from "./scrape-shared";
 
 const SEARCHAPI_URL = "https://www.searchapi.io/api/v1/search";
-
-// SearchApi localizes every surface it can; default to a US audience.
-const GOOGLE_LOCALE = { gl: "us", hl: "en" } as const;
 
 const SEARCHAPI_TIMEOUT_MS = 3 * 60 * 1000;
 
 type SearchapiTarget = {
 	engine: string;
 	params?: Record<string, string>;
+	/** Takes Google's gl/hl locale pair. */
+	googleLocale?: boolean;
 	nested?: "ai_overview";
 };
 
@@ -25,8 +25,8 @@ const SEARCHAPI_TARGETS: Record<string, SearchapiTarget> = {
 	perplexity: { engine: "perplexity" },
 	copilot: { engine: "bing_copilot" },
 	gemini: { engine: "gemini" },
-	"google-ai-mode": { engine: "google_ai_mode", params: { ...GOOGLE_LOCALE } },
-	"google-ai-overview": { engine: "google", params: { ...GOOGLE_LOCALE, link: "resolved" }, nested: "ai_overview" },
+	"google-ai-mode": { engine: "google_ai_mode", googleLocale: true },
+	"google-ai-overview": { engine: "google", params: { link: "resolved" }, googleLocale: true, nested: "ai_overview" },
 };
 
 const AI_OVERVIEW_ENGINE = "google_ai_overview";
@@ -138,6 +138,11 @@ export const searchapi: Provider = {
 		}
 
 		const params = new URLSearchParams({ engine: target.engine, q: prompt, ...target.params });
+		if (target.googleLocale) {
+			const { country, language } = getScrapeLocale();
+			params.set("gl", country.toLowerCase());
+			params.set("hl", language);
+		}
 		if (model === "chatgpt") params.set("web_search", String(options?.webSearch ?? false));
 
 		const serp = await search(params);
