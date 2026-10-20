@@ -77,6 +77,32 @@ Brand onboarding and the Opportunities report also need one direct LLM API key �
 | `DATAFORSEO_PASSWORD` | DataForSEO password |
 | `SCRAPE_TARGETS` | Comma-separated `model:provider[:version][:online]` entries. See [Providers](/docs/user-guide/providers#scrape_targets-format). |
 
+### Market (country and language)
+
+Answer engines tailor what they say — which shops, prices, sources and brands — to where the asker is. By default Elmo asks as a user in the United States, in English. To track another market, set:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ELMO_COUNTRY` | ISO 3166-1 alpha-2 country the prompts are asked from, e.g. `IT`. | `US` |
+| `ELMO_LANGUAGE` | ISO 639-1 language for providers that take an interface language, e.g. `it`. | `en` |
+
+An invalid value stops the worker at startup rather than quietly tracking the US. Write your prompts in the market's language too: most chatbots answer in the language they are asked in, and some providers have no other lever.
+
+How each provider applies them:
+
+| Provider | Country | Language |
+|----------|---------|----------|
+| Cloro | Every surface | Google AI Mode and AI Overview (`hl`); otherwise derived from the country |
+| SearchApi | Google AI Mode and AI Overview only — its ChatGPT, Gemini, Copilot and Perplexity engines take no location | Google surfaces (`hl`) |
+| BrightData | Every surface (Copilot's country list is shorter than the others) | Google AI Mode and AI Overview |
+| Oxylabs | Every surface | Google AI Overview |
+| Olostep | Every surface | Google surfaces |
+| DataForSEO | Google surfaces and the ChatGPT/Gemini scrapers; for pinned models, ChatGPT and Perplexity Sonar only (not Gemini) | Google surfaces and scrapers |
+| OpenAI, Anthropic, OpenRouter | Web search location | — |
+| Mistral | Not supported by its web search tool | — |
+
+Providers that never sent a location before keep sending none while `ELMO_COUNTRY` is unset. A provider may not serve every country on every surface — Cloro, for one, lists them per model at `GET https://api.cloro.dev/v1/countries?model=<model>` — and an unsupported one fails the run with the provider's error.
+
 ### Mention Judging
 
 Elmo uses [Jev](https://typesafe.ai) from TypeSafe to read each answer. Jev decides which tracked companies the answer really mentions, its sentiment toward each one, and the passage that shows it. **`TYPESAFE_API_KEY` is required**: the worker won't start without it. Get a key at [console.typesafe.ai](https://console.typesafe.ai).
