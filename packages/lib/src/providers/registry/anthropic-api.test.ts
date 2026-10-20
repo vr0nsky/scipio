@@ -119,3 +119,17 @@ describe("anthropic-api web search handling", () => {
 		vi.useRealTimers();
 	});
 });
+
+describe("anthropic-api localization", () => {
+	afterEach(() => {
+		vi.unstubAllEnvs();
+	});
+
+	it("searches from the configured country", async () => {
+		vi.stubEnv("ELMO_COUNTRY", "IT");
+
+		await anthropicApi.run("claude", "prompt", { webSearch: true, version: "claude-sonnet-5" });
+
+		expect(sentArgs().tools[0].user_location).toEqual({ type: "approximate", country: "IT" });
+	});
+});

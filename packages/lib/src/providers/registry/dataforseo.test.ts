@@ -375,3 +375,59 @@ describe("dataforseo provider", () => {
 		expect(rawUrl).toBe(realUrl);
 	});
 });
+
+describe("dataforseo localization", () => {
+	afterEach(() => {
+		vi.unstubAllEnvs();
+	});
+
+	const LLM_OK = {
+		tasks: [
+			{
+				status_code: 20000,
+				status_message: "Ok.",
+				result: [{ model_name: "gpt-5.5", items: [{ type: "message", sections: [{ type: "text", text: "Ciao" }] }] }],
+			},
+		],
+	};
+
+	it("searches Google from the configured country's location in its language", async () => {
+		vi.stubEnv("ELMO_COUNTRY", "IT");
+		vi.stubEnv("ELMO_LANGUAGE", "it");
+		dataforseoClient.googleOrganicLiveAdvanced.mockResolvedValueOnce(AI_OVERVIEW_OK);
+
+		await dataforseo.run("google-ai-overview", "migliori casse bluetooth", { webSearch: true });
+
+		const [payload] = dataforseoClient.googleOrganicLiveAdvanced.mock.calls[0];
+		expect(payload[0]).toMatchObject({ location_code: 2380, language_code: "it" });
+	});
+
+	it("keeps the US English location when nothing is configured", async () => {
+		dataforseoClient.googleAiModeLiveAdvanced.mockResolvedValueOnce(AI_OVERVIEW_OK);
+
+		await dataforseo.run("google-ai-mode", "best bluetooth speakers", { webSearch: true });
+
+		const [payload] = dataforseoClient.googleAiModeLiveAdvanced.mock.calls[0];
+		expect(payload[0]).toMatchObject({ location_code: 2840, language_code: "en" });
+	});
+
+	it("asks pinned ChatGPT models to search from the configured country", async () => {
+		vi.stubEnv("ELMO_COUNTRY", "IT");
+		dataforseoClient.chatgptLlmResponsesLive.mockResolvedValueOnce(LLM_OK);
+
+		await dataforseo.run("chatgpt", "miglior portatile", { webSearch: true, version: "gpt-5.5" });
+
+		const [payload] = dataforseoClient.chatgptLlmResponsesLive.mock.calls[0];
+		expect(payload[0]).toMatchObject({ web_search_country_iso_code: "IT" });
+	});
+
+	it("sends no search country to Gemini's LLM Responses, which documents none", async () => {
+		vi.stubEnv("ELMO_COUNTRY", "IT");
+		dataforseoClient.geminiLlmResponsesLive.mockResolvedValueOnce(LLM_OK);
+
+		await dataforseo.run("gemini", "miglior portatile", { webSearch: true, version: "gemini-2.5-flash" });
+
+		const [payload] = dataforseoClient.geminiLlmResponsesLive.mock.calls[0];
+		expect(payload[0]).not.toHaveProperty("web_search_country_iso_code");
+	});
+});

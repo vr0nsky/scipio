@@ -266,3 +266,29 @@ describe("searchapi provider", () => {
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 	});
 });
+
+describe("searchapi localization", () => {
+	it("asks Google's engines in the configured country and language", async () => {
+		vi.stubEnv("ELMO_COUNTRY", "IT");
+		vi.stubEnv("ELMO_LANGUAGE", "it");
+		const fetchMock = vi.fn().mockResolvedValue(jsonResponse(AI_OVERVIEW_SERP));
+		vi.stubGlobal("fetch", fetchMock);
+
+		await searchapi.run("google-ai-overview", "migliori scarpe da corsa", { webSearch: true });
+
+		const url = requestedUrl(fetchMock);
+		expect(url.searchParams.get("gl")).toBe("it");
+		expect(url.searchParams.get("hl")).toBe("it");
+	});
+
+	it("keeps asking Google as a US English user when nothing is configured", async () => {
+		const fetchMock = vi.fn().mockResolvedValue(jsonResponse(AI_OVERVIEW_SERP));
+		vi.stubGlobal("fetch", fetchMock);
+
+		await searchapi.run("google-ai-overview", "best running shoes", { webSearch: true });
+
+		const url = requestedUrl(fetchMock);
+		expect(url.searchParams.get("gl")).toBe("us");
+		expect(url.searchParams.get("hl")).toBe("en");
+	});
+});

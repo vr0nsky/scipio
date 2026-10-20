@@ -415,3 +415,21 @@ describe("cloro provider", () => {
 		expect(stored(await promise).textContent).toContain("Sonos Era 300");
 	});
 });
+
+describe("cloro localization", () => {
+	it("asks from the configured country", async () => {
+		vi.useFakeTimers();
+		vi.stubEnv("ELMO_COUNTRY", "IT");
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValueOnce(jsonResponse({ task: { id: "task-1", status: "QUEUED" } }))
+			.mockResolvedValueOnce(jsonResponse({ task: { id: "task-1", status: "COMPLETED" }, response: AI_MODE_RESPONSE }));
+		vi.stubGlobal("fetch", fetchMock);
+
+		const promise = cloro.run("google-ai-mode", "Qual è la migliore cassa bluetooth?");
+		await vi.runAllTimersAsync();
+		await promise;
+
+		expect(JSON.parse(fetchMock.mock.calls[0][1].body).payload.country).toBe("IT");
+	});
+});

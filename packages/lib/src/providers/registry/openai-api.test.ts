@@ -175,3 +175,23 @@ describe("openai-api web queries", () => {
 		expect(res.webQueries).toEqual([]);
 	});
 });
+
+describe("openai-api localization", () => {
+	afterEach(() => {
+		vi.unstubAllEnvs();
+	});
+
+	it("searches from the configured country", async () => {
+		vi.stubEnv("ELMO_COUNTRY", "IT");
+
+		await openaiApi.run("chatgpt", "prompt", { webSearch: true, version: "gpt-5-mini" });
+
+		expect(sentArgs().tools.web_search.args.userLocation).toEqual({ type: "approximate", country: "IT" });
+	});
+
+	it("leaves the search location to OpenAI when no country is configured", async () => {
+		await openaiApi.run("chatgpt", "prompt", { webSearch: true, version: "gpt-5-mini" });
+
+		expect(sentArgs().tools.web_search.args).not.toHaveProperty("userLocation");
+	});
+});
