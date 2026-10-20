@@ -3,7 +3,7 @@ import { assertRequiredEnv } from "@workspace/config/env";
 import { parseScrapeTargets } from "@workspace/config/scrape-targets";
 import { getDeploymentFeatures } from "@workspace/deployment";
 import { db } from "@workspace/lib/db/db";
-import { getProvider, validateScrapeTargets } from "@workspace/lib/providers";
+import { getProvider, getScrapeLocale, validateScrapeTargets } from "@workspace/lib/providers";
 import { REFRESH_ROLLUPS_QUEUE, ROLLUP_CATCH_UP_QUEUE } from "@workspace/lib/rollups/constants";
 import { startCredentialRefresh } from "@workspace/lib/secrets";
 import { startBackfills } from "./backfills";
@@ -40,6 +40,8 @@ async function main() {
 	// missing API keys, and per-provider target errors before any job runs.
 	validateScrapeTargets(parseScrapeTargets(process.env.SCRAPE_TARGETS), getProvider);
 	console.log("SCRAPE_TARGETS validated");
+	const locale = getScrapeLocale();
+	console.log(`Tracking prompts as asked from ${locale.country} in "${locale.language}"`);
 	reprocessDays();
 
 	// Before anything stamps runs or brands: the stamp names the judge.

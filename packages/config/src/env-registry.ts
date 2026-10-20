@@ -217,6 +217,20 @@ export const ENV_REGISTRY: EnvVarSpec[] = [
 			"model:provider override for the LLM behind brand onboarding and the Opportunities report (e.g., 'claude:anthropic-api'). Defaults to the first configured provider in RESEARCH_PROVIDER_PREFERENCE.",
 	},
 	{
+		name: "ELMO_COUNTRY",
+		scope: "server",
+		requiredBy: "optional",
+		description:
+			"ISO 3166-1 alpha-2 country (e.g. 'IT') that tracked prompts are asked from, passed to every provider that can localize. Defaults to 'US'.",
+	},
+	{
+		name: "ELMO_LANGUAGE",
+		scope: "server",
+		requiredBy: "optional",
+		description:
+			"ISO 639-1 language (e.g. 'it') for providers that take an interface language, such as Google's hl. Defaults to 'en'.",
+	},
+	{
 		name: "TYPESAFE_API_KEY",
 		scope: "server",
 		// The worker refuses to start without it; the web app never uses it.

@@ -48,6 +48,8 @@ declare global {
 			readonly ANTHROPIC_API_KEY: string;
 			readonly MISTRAL_API_KEY?: string;
 			readonly OPENROUTER_API_KEY?: string;
+			readonly ELMO_COUNTRY?: string;
+			readonly ELMO_LANGUAGE?: string;
 			readonly SEARCHAPI_API_KEY?: string;
 			readonly OLOSTEP_API_KEY?: string;
 			readonly BRIGHTDATA_API_TOKEN?: string;

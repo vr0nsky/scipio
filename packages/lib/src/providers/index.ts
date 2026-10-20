@@ -13,6 +13,7 @@ import { stub } from "./registry/stub";
 import type { ModelConfig, Provider, ProviderAccess } from "./types";
 
 export { validateScrapeTargets } from "./config";
+export { getScrapeLocale, type ScrapeLocale } from "./locale";
 export { selectTargetsForBrand } from "./runner";
 export type {
 	ModelConfig,
