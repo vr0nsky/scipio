@@ -5,14 +5,14 @@ import {
 	extractCitationsFromGoogle,
 } from "../../text-extraction";
 import { reportedWebQueries } from "../config";
+import { getRequestedCountry } from "../locale";
 import type { ModelConfig, Provider, ProviderAccess, ProviderOptions, ScrapeResult } from "../types";
 import {
 	assertPromptLength,
 	createDfsAiApi,
 	createDfsSerpApi,
-	DFS_LANGUAGE_CODE,
-	DFS_LOCATION_CODE,
 	dfsFirstResult,
+	dfsLocale,
 	dfsResultOrError,
 	fanOutQueries,
 	isDataforseoConfigured,
@@ -57,8 +57,7 @@ const SCRAPER_CALLS = {
 		api.chatGptLlmScraperLiveAdvanced([
 			new client.AiOptimizationChatGptLlmScraperLiveAdvancedRequestInfo({
 				keyword: prompt,
-				location_code: DFS_LOCATION_CODE,
-				language_code: DFS_LANGUAGE_CODE,
+				...dfsLocale(),
 				// ChatGPT decides per prompt whether to search; force it so a tracked
 				// run always reflects the browsing experience. Gemini always searches
 				// and has no equivalent flag.
@@ -69,8 +68,7 @@ const SCRAPER_CALLS = {
 		api.geminiLlmScraperLiveAdvanced([
 			new client.AiOptimizationGeminiLlmScraperLiveAdvancedRequestInfo({
 				keyword: prompt,
-				location_code: DFS_LOCATION_CODE,
-				language_code: DFS_LANGUAGE_CODE,
+				...dfsLocale(),
 			}),
 		]),
 } as const;
@@ -97,6 +95,7 @@ interface DataForSeoLlmRequest {
 	user_prompt: string;
 	model_name: string;
 	web_search: boolean;
+	web_search_country_iso_code?: string;
 }
 
 /** Live LLM Responses call dispatch, keyed by Elmo model id. */
@@ -114,8 +113,7 @@ async function runGoogleAiMode(prompt: string): Promise<ScrapeResult> {
 	const api = createDfsSerpApi();
 	const requestInfo = new client.SerpGoogleAiModeLiveAdvancedRequestInfo({
 		keyword: prompt,
-		location_code: DFS_LOCATION_CODE,
-		language_code: DFS_LANGUAGE_CODE,
+		...dfsLocale(),
 		depth: 10,
 	});
 
@@ -138,8 +136,7 @@ function runGoogleAiOverview(prompt: string): Promise<ScrapeResult> {
 	const api = createDfsSerpApi();
 	const requestInfo = new client.SerpGoogleOrganicLiveAdvancedRequestInfo({
 		keyword: prompt,
-		location_code: DFS_LOCATION_CODE,
-		language_code: DFS_LANGUAGE_CODE,
+		...dfsLocale(),
 		depth: 10,
 		// AI Overviews are generated on demand; without this DataForSEO only
 		// returns whatever it had cached, so most runs would come back empty.
@@ -240,9 +237,15 @@ async function runLlmResponse(model: string, prompt: string, options?: ProviderO
 		model_name: modelName,
 		web_search: webSearch,
 	};
-	// Do not expose country localization yet: DataForSEO's LLM Responses
-	// support differs by surface/model (ChatGPT has model caveats, Perplexity
-	// only documents it for Sonar models, and Gemini does not document it).
+	// LLM Responses takes a search country only for ChatGPT (with web_search on;
+	// DataForSEO excludes o1, o1-pro and o3-mini) and Perplexity (Sonar models
+	// only); Gemini documents none. A model outside that set is the operator's
+	// explicit pin, so the request goes as configured and DataForSEO's own error
+	// names the problem.
+	const country = getRequestedCountry();
+	if (country && ((spec.call === "chatgpt" && webSearch) || spec.call === "perplexity")) {
+		body.web_search_country_iso_code = country;
+	}
 
 	const response = await LLM_CALLS[spec.call](api, [body]);
 	const result = dfsFirstResult<{ model_name?: string; fan_out_queries?: unknown }>(response);

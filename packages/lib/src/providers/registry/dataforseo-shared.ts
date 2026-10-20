@@ -1,6 +1,8 @@
 import * as client from "dataforseo-client";
 import { getCredential } from "../../secrets";
 import { configuredWhen } from "../config";
+import { getScrapeLocale } from "../locale";
+import { DFS_COUNTRY_LOCATION_CODES } from "./dataforseo-locations";
 import { type Attempt, nonEmptyStrings } from "./scrape-shared";
 
 /**
@@ -11,10 +13,13 @@ import { type Attempt, nonEmptyStrings } from "./scrape-shared";
 
 const MAX_PROMPT_CHARS = 500;
 
-// Country localization is intentionally not exposed via SCRAPE_TARGETS yet
-// because support differs by DataForSEO surface and underlying model.
-export const DFS_LOCATION_CODE = 2840;
-export const DFS_LANGUAGE_CODE = "en";
+/** location_code/language_code for the SERP and LLM Scraper endpoints. */
+export function dfsLocale(): { location_code: number; language_code: string } {
+	const { country, language } = getScrapeLocale();
+	const locationCode = DFS_COUNTRY_LOCATION_CODES[country];
+	if (locationCode === undefined) throw new Error(`DataForSEO: no location_code for country "${country}"`);
+	return { location_code: locationCode, language_code: language };
+}
 
 export const isDataforseoConfigured = configuredWhen("DATAFORSEO_LOGIN", "DATAFORSEO_PASSWORD");
 
