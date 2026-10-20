@@ -43,3 +43,8 @@ export function getScrapeLocale(env: Record<string, string | undefined> = proces
 export function getRequestedCountry(env: Record<string, string | undefined> = process.env): string | undefined {
 	return env.ELMO_COUNTRY?.trim() ? getScrapeLocale(env).country : undefined;
 }
+
+/** The language only when ELMO_LANGUAGE is set; see getRequestedCountry. */
+export function getRequestedLanguage(env: Record<string, string | undefined> = process.env): string | undefined {
+	return env.ELMO_LANGUAGE?.trim() ? getScrapeLocale(env).language : undefined;
+}

@@ -433,3 +433,26 @@ describe("cloro localization", () => {
 		expect(JSON.parse(fetchMock.mock.calls[0][1].body).payload.country).toBe("IT");
 	});
 });
+
+describe("cloro language", () => {
+	async function submittedPayload(model: string) {
+		const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ error: "stop here" }, 400));
+		vi.stubGlobal("fetch", fetchMock);
+		await expect(cloro.run(model, "migliori casse")).rejects.toThrow();
+		return JSON.parse(fetchMock.mock.calls[0][1].body).payload;
+	}
+
+	it("asks Google surfaces in the configured language", async () => {
+		vi.stubEnv("ELMO_LANGUAGE", "it");
+		expect((await submittedPayload("google-ai-overview")).hl).toBe("it");
+	});
+
+	it("sends no language to the chatbots, which take none", async () => {
+		vi.stubEnv("ELMO_LANGUAGE", "it");
+		expect(await submittedPayload("chatgpt")).not.toHaveProperty("hl");
+	});
+
+	it("leaves the language to Cloro when none is configured", async () => {
+		expect(await submittedPayload("google-ai-mode")).not.toHaveProperty("hl");
+	});
+});

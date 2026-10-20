@@ -1,7 +1,7 @@
 import { getCredential } from "../../secrets";
 import { type Citation, cloroAnswer, extractCitationsFromCloro } from "../../text-extraction";
 import { configuredWhen, reportedWebQueries } from "../config";
-import { getScrapeLocale } from "../locale";
+import { getRequestedLanguage, getScrapeLocale } from "../locale";
 import type { ModelConfig, Provider, ScrapeResult } from "../types";
 import { failureDetails, isTransientStatus, pollDelay, queriesFromKeys, responseError, sleep } from "./scrape-shared";
 
@@ -15,6 +15,8 @@ type CloroTaskConfig = {
 	field: "prompt" | "query";
 	include: Record<string, unknown>;
 	params?: Record<string, unknown>;
+	/** Takes Google's `hl` interface language; the chatbot tasks have no language field. */
+	googleLanguage?: boolean;
 };
 
 const CLORO_TASKS: Record<string, CloroTaskConfig> = {
@@ -31,8 +33,13 @@ const CLORO_TASKS: Record<string, CloroTaskConfig> = {
 	perplexity: { taskType: "PERPLEXITY", field: "prompt", include: { markdown: true } },
 	copilot: { taskType: "COPILOT", field: "prompt", include: { markdown: true } },
 	gemini: { taskType: "GEMINI", field: "prompt", include: { markdown: true } },
-	"google-ai-mode": { taskType: "AIMODE", field: "prompt", include: { markdown: true } },
-	"google-ai-overview": { taskType: "GOOGLE", field: "query", include: { aioverview: { markdown: true } } },
+	"google-ai-mode": { taskType: "AIMODE", field: "prompt", include: { markdown: true }, googleLanguage: true },
+	"google-ai-overview": {
+		taskType: "GOOGLE",
+		field: "query",
+		include: { aioverview: { markdown: true } },
+		googleLanguage: true,
+	},
 };
 
 // Answers can take minutes to generate, so submit through Cloro's async task
@@ -192,6 +199,10 @@ export const cloro: Provider = {
 			include: task.include,
 			...task.params,
 		};
+		// Without `hl` Cloro derives the language from the country, so it is only
+		// sent when the operator asked for a specific one.
+		const language = getRequestedLanguage();
+		if (task.googleLanguage && language) payload.hl = language;
 
 		const response = await runAsyncTask(task.taskType, payload);
 		const answer = cloroAnswer(response) ?? {};

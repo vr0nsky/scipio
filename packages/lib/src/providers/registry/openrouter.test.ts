@@ -70,3 +70,29 @@ describe("openrouter run", () => {
 		expect(stored(result).textContent).toBe("clipped");
 	});
 });
+
+describe("openrouter localization", () => {
+	afterEach(() => {
+		vi.unstubAllEnvs();
+	});
+
+	it("searches from the configured country through the web plugin", async () => {
+		vi.stubEnv("ELMO_COUNTRY", "IT");
+		const fetchMock = stubFetch();
+
+		await openrouter.run("chatgpt", "prompt", { webSearch: true, version: "openai/gpt-5-mini:online" });
+
+		const body = sentBody(fetchMock);
+		expect(body.model).toBe("openai/gpt-5-mini");
+		expect(body.plugins).toEqual([{ id: "web", user_location: { type: "approximate", country: "IT" } }]);
+	});
+
+	it("keeps search off when webSearch is off, whatever the country", async () => {
+		vi.stubEnv("ELMO_COUNTRY", "IT");
+		const fetchMock = stubFetch();
+
+		await openrouter.run("chatgpt", "prompt", { webSearch: false, version: "openai/gpt-5-mini" });
+
+		expect(sentBody(fetchMock)).not.toHaveProperty("plugins");
+	});
+});

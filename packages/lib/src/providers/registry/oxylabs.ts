@@ -1,6 +1,7 @@
 import { getCredential } from "../../secrets";
 import { type Citation, extractCitationsFromOxylabs } from "../../text-extraction";
 import { configuredWhen, reportedWebQueries } from "../config";
+import { getRequestedCountry, getRequestedLanguage } from "../locale";
 import type { ModelConfig, Provider, ProviderOptions, ScrapeResult } from "../types";
 import { failureDetails, isTransientStatus, pollDelay, queriesFromKeys, responseError, sleep } from "./scrape-shared";
 
@@ -14,6 +15,26 @@ const OXYLABS_SOURCES: Record<string, { source: string; field: "prompt" | "query
 	"google-ai-mode": { source: "google_ai_mode", field: "query", render: "html" },
 	"google-ai-overview": { source: "google_search", field: "query", render: "html" },
 };
+
+const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
+
+/**
+ * `geo_location` takes an ISO code on the Google sources but documents only
+ * English country names ("Italy") for ChatGPT and Perplexity, so those get the
+ * name. Google's interface language rides on `locale` (an Accept-Language value
+ * like "it-it"); AI Mode documents no locale and answers in the prompt's language.
+ */
+function oxylabsLocale(source: string): Record<string, string> {
+	const country = getRequestedCountry();
+	const language = getRequestedLanguage();
+	const isGoogle = source.startsWith("google_");
+	const locale: Record<string, string> = {};
+	if (country) locale.geo_location = isGoogle ? country : (countryNames.of(country) ?? country);
+	if (source === "google_search" && language) {
+		locale.locale = country ? `${language}-${country.toLowerCase()}` : language;
+	}
+	return locale;
+}
 
 // AI answers can outlive the Realtime API's connection TTL. Use single-job
 // Push-Pull for every source; ChatGPT and Perplexity do not support batch jobs.
@@ -157,6 +178,7 @@ export const oxylabs: Provider = {
 			source: sourceConfig.source,
 			[sourceConfig.field]: prompt,
 			parse: true,
+			...oxylabsLocale(sourceConfig.source),
 		};
 		if (sourceConfig.render) body.render = sourceConfig.render;
 		// ChatGPT's `search` flag toggles in-product web search. Other sources

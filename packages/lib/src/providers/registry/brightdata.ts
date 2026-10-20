@@ -2,7 +2,7 @@ import { bdclient } from "@brightdata/sdk";
 import { getCredential } from "../../secrets";
 import { extractCitationsFromBrightdata } from "../../text-extraction";
 import { configuredWhen, reportedWebQueries } from "../config";
-import { getScrapeLocale } from "../locale";
+import { getRequestedCountry, getRequestedLanguage, getScrapeLocale } from "../locale";
 import type { ModelConfig, Provider, ProviderOptions, ScrapeResult } from "../types";
 import { type Attempt, nonEmptyStrings, pollDelay, retryTransient, sleep } from "./scrape-shared";
 
@@ -232,6 +232,20 @@ export const brightdata: Provider = {
 	},
 };
 
+/**
+ * Every collector takes a `country` to ask from (coverage differs per
+ * collector — Copilot's list has no Italy, for one — and an unsupported code
+ * fails the row with BrightData's reason). AI Mode also takes Google's `hl`.
+ */
+function datasetLocale(model: string): Record<string, string> {
+	const country = getRequestedCountry();
+	const language = getRequestedLanguage();
+	return {
+		...(country ? { country } : {}),
+		...(model === "google-ai-mode" && language ? { hl: language } : {}),
+	};
+}
+
 async function triggerSnapshot(datasetId: string, model: string, prompt: string, webSearch: boolean): Promise<string> {
 	const response = await fetch(
 		`https://api.brightdata.com/datasets/v3/trigger?dataset_id=${datasetId}&notify=false&include_errors=true&format=json`,
@@ -248,6 +262,7 @@ async function triggerSnapshot(datasetId: string, model: string, prompt: string,
 					index: 1,
 					// ChatGPT is the only chatbot with a web search toggle.
 					...(model === "chatgpt" ? { web_search: webSearch } : {}),
+					...datasetLocale(model),
 				},
 			]),
 		},

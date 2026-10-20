@@ -1,6 +1,7 @@
 import { getCredential } from "../../secrets";
 import { type Citation, normalizeCitationTitle } from "../../text-extraction";
 import { API_PROVIDER_MAX_OUTPUT_TOKENS, configuredWhen, reportedWebQueries, warnIfOutputCapped } from "../config";
+import { getRequestedCountry } from "../locale";
 import type {
 	Provider,
 	ProviderOptions,
@@ -23,6 +24,13 @@ function openrouterHeaders(): Record<string, string> {
 		"HTTP-Referer": process.env.APP_URL ?? "https://github.com/elmohq/elmo",
 		"X-Title": "Elmo AEO",
 	};
+}
+
+// The web plugin passes user_location through to native search (OpenAI,
+// Anthropic); other search engines ignore it.
+function webUserLocation(): { user_location?: { type: "approximate"; country: string } } {
+	const country = getRequestedCountry();
+	return country ? { user_location: { type: "approximate", country } } : {};
 }
 
 function extractCitationsFromOpenRouterResponse(data: any): Citation[] {
@@ -75,7 +83,7 @@ export const openrouter: Provider = {
 		};
 		// `engine: "native"` runs the underlying provider's real web-search tool
 		// (e.g. Anthropic's web_search_20250305) instead of the Exa fallback.
-		if (webSearch) body.plugins = [{ id: "web", engine: "native" }];
+		if (webSearch) body.plugins = [{ id: "web", engine: "native", ...webUserLocation() }];
 		const res = await fetch(OPENROUTER_API_URL, {
 			method: "POST",
 			headers: openrouterHeaders(),
@@ -110,7 +118,13 @@ export const openrouter: Provider = {
 		// ":online" is exactly equivalent to plugins: [{ id: "web" }], and with the
 		// engine unset OpenRouter routes to the model provider's native web search
 		// (Exa only as a fallback) — which is the consumer surface Elmo tracks.
-		if (options?.webSearch && !modelSlug.includes(":online")) {
+		// A search country needs the plugin's spelled-out form, which is why it
+		// replaces the suffix rather than joining it.
+		const location = webUserLocation();
+		const pluginForm = options?.webSearch && location.user_location;
+		if (pluginForm) {
+			modelSlug = modelSlug.replace(":online", "");
+		} else if (options?.webSearch && !modelSlug.includes(":online")) {
 			modelSlug = `${modelSlug}:online`;
 		}
 
@@ -118,6 +132,7 @@ export const openrouter: Provider = {
 			model: modelSlug,
 			messages: [{ role: "user", content: prompt }],
 			max_tokens: API_PROVIDER_MAX_OUTPUT_TOKENS.openrouter,
+			...(pluginForm ? { plugins: [{ id: "web", ...location }] } : {}),
 		};
 
 		// Use raw fetch instead of SDK — the SDK's ChatAssistantMessage Zod schema

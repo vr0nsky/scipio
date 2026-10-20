@@ -169,3 +169,29 @@ describe("oxylabs provider", () => {
 		);
 	});
 });
+
+describe("oxylabs localization", () => {
+	async function submittedBody(model: string) {
+		const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ error: "stop here" }, 400));
+		vi.stubGlobal("fetch", fetchMock);
+		await expect(oxylabs.run(model, "migliori casse", { webSearch: true })).rejects.toThrow();
+		return JSON.parse(fetchMock.mock.calls[0][1].body);
+	}
+
+	it("routes ChatGPT through the configured country by name", async () => {
+		vi.stubEnv("ELMO_COUNTRY", "IT");
+		expect((await submittedBody("chatgpt")).geo_location).toBe("Italy");
+	});
+
+	it("localizes Google search by country code and interface language", async () => {
+		vi.stubEnv("ELMO_COUNTRY", "IT");
+		vi.stubEnv("ELMO_LANGUAGE", "it");
+		expect(await submittedBody("google-ai-overview")).toMatchObject({ geo_location: "IT", locale: "it-it" });
+	});
+
+	it("sends no location when none is configured", async () => {
+		const body = await submittedBody("google-ai-mode");
+		expect(body).not.toHaveProperty("geo_location");
+		expect(body).not.toHaveProperty("locale");
+	});
+});

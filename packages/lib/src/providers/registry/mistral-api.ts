@@ -90,6 +90,8 @@ export const mistralApi: Provider = {
 		const version = options?.version ?? DEFAULT_MODEL;
 
 		if (options?.webSearch) {
+			// The web_search tool takes no location, so ELMO_COUNTRY can't reach it;
+			// only the prompt's own language steers the results.
 			// Mistral's web_search connector has no per-call search-count knob, so the
 			// token cap (completion_args.max_tokens on this endpoint) is the only budget
 			// bound. The conversations response carries no finish_reason, so unlike the

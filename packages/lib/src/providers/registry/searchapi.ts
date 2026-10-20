@@ -12,7 +12,7 @@ const SEARCHAPI_TIMEOUT_MS = 3 * 60 * 1000;
 type SearchapiTarget = {
 	engine: string;
 	params?: Record<string, string>;
-	/** Takes Google's gl/hl locale pair. */
+	/** Takes Google's gl/hl locale pair. The chatbot engines take no location at all. */
 	googleLocale?: boolean;
 	nested?: "ai_overview";
 };

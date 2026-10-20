@@ -2,8 +2,17 @@ import Olostep from "olostep";
 import { getCredential } from "../../secrets";
 import { type Citation, normalizeCitationTitle } from "../../text-extraction";
 import { configuredWhen, reportedWebQueries } from "../config";
+import { getRequestedCountry, getRequestedLanguage } from "../locale";
 import type { ModelConfig, Provider, ProviderOptions, ScrapeResult } from "../types";
 import { nonEmptyStrings } from "./scrape-shared";
+
+// Olostep localizes through the batch's residential `country`, which every AI
+// parser honors; it has no language setting, so Google pages also get gl/hl.
+function googleLocaleParams(): string {
+	const country = getRequestedCountry();
+	const language = getRequestedLanguage();
+	return `${country ? `&gl=${country.toLowerCase()}` : ""}${language ? `&hl=${language}` : ""}`;
+}
 
 const OLOSTEP_PARSERS: Record<string, { parserId: string; urlTemplate: (q: string) => string; credits: number }> = {
 	chatgpt: {
@@ -13,12 +22,12 @@ const OLOSTEP_PARSERS: Record<string, { parserId: string; urlTemplate: (q: strin
 	},
 	"google-ai-mode": {
 		parserId: "@olostep/google-aimode-results",
-		urlTemplate: (q) => `https://google.com/aimode?q=${encodeURIComponent(q)}`,
+		urlTemplate: (q) => `https://google.com/aimode?q=${encodeURIComponent(q)}${googleLocaleParams()}`,
 		credits: 3,
 	},
 	"google-ai-overview": {
 		parserId: "@olostep/google-ai-overview-results",
-		urlTemplate: (q) => `https://www.google.com/search?q=${encodeURIComponent(q)}`,
+		urlTemplate: (q) => `https://www.google.com/search?q=${encodeURIComponent(q)}${googleLocaleParams()}`,
 		credits: 3,
 	},
 	gemini: {
@@ -112,7 +121,11 @@ export const olostep: Provider = {
 		const url = parserConfig.urlTemplate(prompt);
 
 		// Use batch API — the /scrapes endpoint doesn't support all parsers
-		const batch = await client.batches.create([{ url, customId: "1" }], { parser: { id: parserConfig.parserId } });
+		const country = getRequestedCountry();
+		const batch = await client.batches.create([{ url, customId: "1" }], {
+			parser: { id: parserConfig.parserId },
+			...(country ? { country } : {}),
+		});
 
 		await batch.waitTillDone({ checkEveryNSecs: 5, timeoutSeconds: 1200 });
 

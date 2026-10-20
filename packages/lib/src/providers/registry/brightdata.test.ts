@@ -133,3 +133,45 @@ describe("brightdata polling", () => {
 		expect(cancelSnapshot).toHaveBeenCalledWith("sd_stuck");
 	});
 });
+
+describe("brightdata localization", () => {
+	function triggerAndFail() {
+		const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ error: "stop here" }, 400));
+		vi.stubGlobal("fetch", fetchMock);
+		return fetchMock;
+	}
+
+	it("asks the chatbot collectors from the configured country", async () => {
+		vi.stubEnv("BRIGHTDATA_API_TOKEN", "test-token");
+		vi.stubEnv("ELMO_COUNTRY", "IT");
+		vi.stubEnv("ELMO_LANGUAGE", "it");
+		const fetchMock = triggerAndFail();
+
+		await expect(brightdata.run("google-ai-mode", "migliori casse", { webSearch: true })).rejects.toThrow();
+
+		expect(JSON.parse(fetchMock.mock.calls[0][1].body)[0]).toMatchObject({ country: "IT", hl: "it" });
+	});
+
+	it("sends no country when none is configured", async () => {
+		vi.stubEnv("BRIGHTDATA_API_TOKEN", "test-token");
+		const fetchMock = triggerAndFail();
+
+		await expect(brightdata.run("chatgpt", "best speakers", { webSearch: true })).rejects.toThrow();
+
+		expect(JSON.parse(fetchMock.mock.calls[0][1].body)[0]).not.toHaveProperty("country");
+	});
+
+	it("asks Google for the AI Overview in the configured country and language", async () => {
+		vi.stubEnv("BRIGHTDATA_API_TOKEN", "test-token");
+		vi.stubEnv("ELMO_COUNTRY", "IT");
+		vi.stubEnv("ELMO_LANGUAGE", "it");
+		const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ ai_overview: { text: "ok" } }));
+		vi.stubGlobal("fetch", fetchMock);
+
+		await brightdata.run("google-ai-overview", "migliori casse", { webSearch: true });
+
+		const target = new URL(JSON.parse(fetchMock.mock.calls[0][1].body).url);
+		expect(target.searchParams.get("gl")).toBe("it");
+		expect(target.searchParams.get("hl")).toBe("it");
+	});
+});
