@@ -11,6 +11,7 @@ import {
 	reportedWebQueries,
 	warnIfOutputCapped,
 } from "../config";
+import { getRequestedCountry } from "../locale";
 import type {
 	Provider,
 	ProviderOptions,
@@ -47,6 +48,13 @@ function webSearchQueries(output: unknown): string[] {
 	return nonEmptyStrings([action.query, ...(action.queries ?? [])]);
 }
 
+// Searches from the configured country; with none set the tool infers location
+// the way it always has.
+function webSearchUserLocation() {
+	const country = getRequestedCountry();
+	return country ? { userLocation: { type: "approximate" as const, country } } : {};
+}
+
 function isResponsesPayload(body: unknown): body is { output: unknown[] } {
 	return Array.isArray((body as { output?: unknown } | null | undefined)?.output);
 }
@@ -72,7 +80,12 @@ async function runOpenAI(prompt: string, model: string, options?: ProviderOption
 		toolChoice: webSearch ? "auto" : "none",
 		...(webSearch
 			? {
-					tools: { web_search: openai.tools.webSearch({ searchContextSize: OPENAI_WEB_SEARCH_CONTEXT_SIZE }) },
+					tools: {
+						web_search: openai.tools.webSearch({
+							searchContextSize: OPENAI_WEB_SEARCH_CONTEXT_SIZE,
+							...webSearchUserLocation(),
+						}),
+					},
 					providerOptions: { openai: { maxToolCalls: OPENAI_WEB_SEARCH_MAX_TOOL_CALLS } },
 				}
 			: {}),
@@ -120,7 +133,10 @@ export const openaiApi: Provider = {
 			...(webSearch
 				? {
 						tools: {
-							web_search: openai.tools.webSearch({ searchContextSize: RESEARCH_WEB_SEARCH_CONTEXT_SIZE }),
+							web_search: openai.tools.webSearch({
+								searchContextSize: RESEARCH_WEB_SEARCH_CONTEXT_SIZE,
+								...webSearchUserLocation(),
+							}),
 						},
 						providerOptions: { openai: { maxToolCalls: RESEARCH_WEB_SEARCH_MAX_USES } },
 					}

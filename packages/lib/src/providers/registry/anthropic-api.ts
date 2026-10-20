@@ -8,6 +8,7 @@ import {
 	RESEARCH_WEB_SEARCH_MAX_USES,
 	warnIfOutputCapped,
 } from "../config";
+import { getRequestedCountry } from "../locale";
 import type {
 	Provider,
 	ProviderOptions,
@@ -29,14 +30,23 @@ function getClient(): Anthropic {
 	return new Anthropic({ apiKey: getCredential("ANTHROPIC_API_KEY")! });
 }
 
+// Searches from the configured country; with none set the tool infers location
+// the way it always has.
+function webSearchUserLocation(): { type: "approximate"; country: string } | undefined {
+	const country = getRequestedCountry();
+	return country ? { type: "approximate", country } : undefined;
+}
+
 async function runAnthropic(prompt: string, model: string, options?: ProviderOptions): Promise<ScrapeResult> {
 	const client = getClient();
 	const tools: Anthropic.Messages.ToolUnion[] = [];
+	const userLocation = webSearchUserLocation();
 	if (options?.webSearch) {
 		tools.push({
 			type: "web_search_20250305",
 			name: "web_search",
 			max_uses: ANTHROPIC_WEB_SEARCH_MAX_USES,
+			...(userLocation ? { user_location: userLocation } : {}),
 		});
 	}
 
@@ -111,11 +121,19 @@ export const anthropicApi: Provider = {
 		schema,
 		webSearch = true,
 	}: StructuredResearchOptions<T>): Promise<StructuredResearchResult<T>> {
+		const userLocation = webSearchUserLocation();
 		const object = await structuredResearch(getAnthropicLanguageModel(DEFAULT_RESEARCH_MODEL), {
 			prompt,
 			schema,
 			...(webSearch
-				? { tools: { web_search: anthropic.tools.webSearch_20250305({ maxUses: RESEARCH_WEB_SEARCH_MAX_USES }) } }
+				? {
+						tools: {
+							web_search: anthropic.tools.webSearch_20250305({
+								maxUses: RESEARCH_WEB_SEARCH_MAX_USES,
+								...(userLocation ? { userLocation } : {}),
+							}),
+						},
+					}
 				: {}),
 		});
 		return { object, modelVersion: DEFAULT_RESEARCH_MODEL };
