@@ -33,10 +33,12 @@ import { Route as AuthedAppIndexRouteImport } from './routes/_authed/app/index'
 import { Route as AuthedAppNewRouteImport } from './routes/_authed/app/new'
 import { Route as AuthedReportsIndexRouteImport } from './routes/_authed/reports/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiHealthIndexRouteImport } from './routes/api/health/index'
 import { Route as ApiManifestIndexRouteImport } from './routes/api/manifest/index'
 import { Route as ApiMcpSplatRouteImport } from './routes/api/mcp/$'
 import { Route as ApiOgIndexRouteImport } from './routes/api/og/index'
 import { Route as ApiSetupStatusIndexRouteImport } from './routes/api/setup-status/index'
+import { Route as ApiSiteIconIndexRouteImport } from './routes/api/site-icon/index'
 import { Route as ApiV1SplatRouteImport } from './routes/api/v1/$'
 import { Route as ApiV1MeRouteImport } from './routes/api/v1/me'
 import { Route as ApiV1ModelsRouteImport } from './routes/api/v1/models'
@@ -221,6 +223,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHealthIndexRoute = ApiHealthIndexRouteImport.update({
+  id: '/api/health/',
+  path: '/api/health/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiManifestIndexRoute = ApiManifestIndexRouteImport.update({
   id: '/api/manifest/',
   path: '/api/manifest/',
@@ -239,6 +246,11 @@ const ApiOgIndexRoute = ApiOgIndexRouteImport.update({
 const ApiSetupStatusIndexRoute = ApiSetupStatusIndexRouteImport.update({
   id: '/api/setup-status/',
   path: '/api/setup-status/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSiteIconIndexRoute = ApiSiteIconIndexRouteImport.update({
+  id: '/api/site-icon/',
+  path: '/api/site-icon/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1SplatRoute = ApiV1SplatRouteImport.update({
@@ -606,9 +618,11 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthedAdminIndexRoute
   '/app/': typeof AuthedAppIndexRoute
   '/reports/': typeof AuthedReportsIndexRoute
+  '/api/health/': typeof ApiHealthIndexRoute
   '/api/manifest/': typeof ApiManifestIndexRoute
   '/api/og/': typeof ApiOgIndexRoute
   '/api/setup-status/': typeof ApiSetupStatusIndexRoute
+  '/api/site-icon/': typeof ApiSiteIconIndexRoute
   '/app/org/$org': typeof AuthedAppOrgOrgRouteWithChildren
   '/reports/render/$reportId': typeof AuthedReportsRenderReportIdRoute
   '/api/v1/brands/$brandId': typeof ApiV1BrandsBrandIdRouteWithChildren
@@ -691,9 +705,11 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthedAdminIndexRoute
   '/app': typeof AuthedAppIndexRoute
   '/reports': typeof AuthedReportsIndexRoute
+  '/api/health': typeof ApiHealthIndexRoute
   '/api/manifest': typeof ApiManifestIndexRoute
   '/api/og': typeof ApiOgIndexRoute
   '/api/setup-status': typeof ApiSetupStatusIndexRoute
+  '/api/site-icon': typeof ApiSiteIconIndexRoute
   '/reports/render/$reportId': typeof AuthedReportsRenderReportIdRoute
   '/api/v1/brands/$brandId': typeof ApiV1BrandsBrandIdRouteWithChildren
   '/api/v1/competitors/$competitorId': typeof ApiV1CompetitorsCompetitorIdRoute
@@ -778,9 +794,11 @@ export interface FileRoutesById {
   '/_authed/admin/': typeof AuthedAdminIndexRoute
   '/_authed/app/': typeof AuthedAppIndexRoute
   '/_authed/reports/': typeof AuthedReportsIndexRoute
+  '/api/health/': typeof ApiHealthIndexRoute
   '/api/manifest/': typeof ApiManifestIndexRoute
   '/api/og/': typeof ApiOgIndexRoute
   '/api/setup-status/': typeof ApiSetupStatusIndexRoute
+  '/api/site-icon/': typeof ApiSiteIconIndexRoute
   '/_authed/app/org/$org': typeof AuthedAppOrgOrgRouteWithChildren
   '/_authed/reports/render/$reportId': typeof AuthedReportsRenderReportIdRoute
   '/api/v1/brands/$brandId': typeof ApiV1BrandsBrandIdRouteWithChildren
@@ -868,9 +886,11 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/app/'
     | '/reports/'
+    | '/api/health/'
     | '/api/manifest/'
     | '/api/og/'
     | '/api/setup-status/'
+    | '/api/site-icon/'
     | '/app/org/$org'
     | '/reports/render/$reportId'
     | '/api/v1/brands/$brandId'
@@ -953,9 +973,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/reports'
+    | '/api/health'
     | '/api/manifest'
     | '/api/og'
     | '/api/setup-status'
+    | '/api/site-icon'
     | '/reports/render/$reportId'
     | '/api/v1/brands/$brandId'
     | '/api/v1/competitors/$competitorId'
@@ -1039,9 +1061,11 @@ export interface FileRouteTypes {
     | '/_authed/admin/'
     | '/_authed/app/'
     | '/_authed/reports/'
+    | '/api/health/'
     | '/api/manifest/'
     | '/api/og/'
     | '/api/setup-status/'
+    | '/api/site-icon/'
     | '/_authed/app/org/$org'
     | '/_authed/reports/render/$reportId'
     | '/api/v1/brands/$brandId'
@@ -1118,9 +1142,11 @@ export interface RootRouteChildren {
   ApiV1ModelsRoute: typeof ApiV1ModelsRoute
   DotwellKnownOauthAuthorizationServerIndexRoute: typeof DotwellKnownOauthAuthorizationServerIndexRoute
   DotwellKnownOauthProtectedResourceIndexRoute: typeof DotwellKnownOauthProtectedResourceIndexRoute
+  ApiHealthIndexRoute: typeof ApiHealthIndexRoute
   ApiManifestIndexRoute: typeof ApiManifestIndexRoute
   ApiOgIndexRoute: typeof ApiOgIndexRoute
   ApiSetupStatusIndexRoute: typeof ApiSetupStatusIndexRoute
+  ApiSiteIconIndexRoute: typeof ApiSiteIconIndexRoute
   ApiV1BrandsBrandIdRoute: typeof ApiV1BrandsBrandIdRouteWithChildren
   ApiV1CompetitorsCompetitorIdRoute: typeof ApiV1CompetitorsCompetitorIdRoute
   ApiV1OrganizationsOrganizationIdRoute: typeof ApiV1OrganizationsOrganizationIdRouteWithChildren
@@ -1307,6 +1333,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/health/': {
+      id: '/api/health/'
+      path: '/api/health'
+      fullPath: '/api/health/'
+      preLoaderRoute: typeof ApiHealthIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/manifest/': {
       id: '/api/manifest/'
       path: '/api/manifest'
@@ -1333,6 +1366,13 @@ declare module '@tanstack/react-router' {
       path: '/api/setup-status'
       fullPath: '/api/setup-status/'
       preLoaderRoute: typeof ApiSetupStatusIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/site-icon/': {
+      id: '/api/site-icon/'
+      path: '/api/site-icon'
+      fullPath: '/api/site-icon/'
+      preLoaderRoute: typeof ApiSiteIconIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/$': {
@@ -2001,9 +2041,11 @@ const rootRouteChildren: RootRouteChildren = {
     DotwellKnownOauthAuthorizationServerIndexRoute,
   DotwellKnownOauthProtectedResourceIndexRoute:
     DotwellKnownOauthProtectedResourceIndexRoute,
+  ApiHealthIndexRoute: ApiHealthIndexRoute,
   ApiManifestIndexRoute: ApiManifestIndexRoute,
   ApiOgIndexRoute: ApiOgIndexRoute,
   ApiSetupStatusIndexRoute: ApiSetupStatusIndexRoute,
+  ApiSiteIconIndexRoute: ApiSiteIconIndexRoute,
   ApiV1BrandsBrandIdRoute: ApiV1BrandsBrandIdRouteWithChildren,
   ApiV1CompetitorsCompetitorIdRoute: ApiV1CompetitorsCompetitorIdRoute,
   ApiV1OrganizationsOrganizationIdRoute:
