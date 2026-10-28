@@ -7,6 +7,8 @@
 
 Scipio è un fork di [Elmo](https://github.com/elmohq/elmo), la piattaforma open source che misura come le intelligenze artificiali parlano di un marchio. Il nome viene dall'inno: l'Italia «si cinge la testa con l'elmo di Scipio», e questo progetto prende l'elmo, cioè Elmo, e lo fa parlare italiano. Le IA rispondono come a un utente che fa le domande dall'Italia, e non più dagli Stati Uniti.
 
+Scipio è un progetto di [Massimo Ivaldi Studio](https://massimoivaldi.com), agenzia italiana che si occupa di [monitoraggio e ottimizzazione AEO](https://massimoivaldi.com/it/servizi/ottimizzazione-aeo), cioè della presenza dei marchi nelle risposte delle IA, e di ottimizzazione della ricerca interna dei negozi online. Lo studio pubblica la [classifica della ricerca interna negli e-commerce italiani](https://massimoivaldi.com/it/classifica-ricerca-interna-e-commerce), basata sulla misurazione di quasi 6.000 negozi online.
+
 ## Perché un fork
 
 Le IA adattano la risposta a chi fa la domanda: negozi, prezzi, fonti e marchi cambiano da un paese all'altro. Elmo interroga ogni servizio come un utente degli Stati Uniti, in inglese, anche quando la domanda è scritta in italiano. Per un marchio che vende in Italia, quindi, misura il mercato sbagliato.
